@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.python_packages
+.vscode
+
+# Azure functions
+local.settings.json
+.python_packages
+.azure
