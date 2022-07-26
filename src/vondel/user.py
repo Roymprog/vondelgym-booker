@@ -1,10 +1,16 @@
 import re
 import requests
+import urllib3
 from vondel.utils import VONDELGYM_URL
 from vondel.parse_page import get_classes_from_vondelgym_oost
 
 class User:
   session_id_regex = re.compile(r"localStorage\.setItem\([^']+'([\w\d]+)'")
+
+  @staticmethod
+  def read_session_id(text: str):
+    """Return the session id from HTML text"""
+    return User.session_id_regex.search(text).group(1)
 
   def __init__(self, session_id: str = None, email: str = None, password: str = None):
     self.email = email
@@ -16,14 +22,14 @@ class User:
 
       url = f'{VONDELGYM_URL}/#login'
       files = {}
-      files['f[email]'] = (None, email)
-      files['f[password]'] = (None, password)
-      files['f[remember_me]'] = (None, '0')
-      files['next_step'] = (None, '')
-      files['commit'] = (None, 'Log in')
-      files['f[form_id]'] = (None, '19206')
+      files['f[email]'] =  email
+      files['f[password]'] = password
+      files['f[remember_me]'] = '0'
+      files['next_step'] = ''
+      files['commit'] = 'Log in'
+      files['f[form_id]'] = '19206'
 
-      body, content_type = requests.models.RequestEncodingMixin._encode_files(files, {})
+      body, content_type = urllib3.encode_multipart_formdata(files)
 
       headers = {}
       headers['Content-type'] = content_type
@@ -36,7 +42,7 @@ class User:
         data=body
       )
 
-      self.session_id = User.session_id_regex.search(response.text).group(1)
+      self.session_id = User.read_session_id(response.text)
   
     return self
 
