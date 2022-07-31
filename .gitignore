@@ -130,3 +130,8 @@ dmypy.json
 
 # VS code
 .vscode
+
+# Azure functions
+local.settings.json
+.python_packages
+.azure
