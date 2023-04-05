@@ -5,7 +5,7 @@ from vondel.utils import VONDELGYM_URL
 from vondel.parse_page import get_classes_from_vondelgym_oost
 
 class User:
-  session_id_regex = re.compile(r"localStorage\.setItem\([^']+'([\w\d]+)'")
+  session_id_regex = re.compile(r"_mysportpages_session_id_=([\w\d]+);")
 
   @staticmethod
   def read_session_id(text: str):
@@ -42,7 +42,7 @@ class User:
         data=body
       )
 
-      self.session_id = User.read_session_id(response.text)
+      self.session_id = User.read_session_id(response.headers["Set-Cookie"])
   
     return self
 

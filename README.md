@@ -97,3 +97,8 @@ Publish this project as a function to the app
 ```bash
 func azure functionapp publish vondelgym-booker --no-build
 ```
+
+## Update deployment
+```bash
+az functionapp update --name vondelgym-booker  --resource-group vondelgymbooking-rg
+```
