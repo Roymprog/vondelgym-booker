@@ -63,7 +63,7 @@ class User:
       headers=headers
     )
 
-  def book_class_at(self, start_time: int, day: int, month: int):
+  async def book_class_at(self, start_time: int, day: int, month: int):
     """Expects to be called with a logged in user."""
     # Do this when not logged in to prevent personal identifiable DDoS
     classes = [clazz for clazz in get_classes_from_vondelgym_oost() \
