@@ -1,3 +1,5 @@
+**Deprecated:** This code is irrelevant since Vondelgym moved to a new booking system.
+
 This tool can be used to automatically attempt to book classes at Vondelgym that you subscribed to to receive notifications when a spot comes available.
 The tool will read your notifications from the profile page, then read the schedule to find a matching class and book it when there's a spot available.
 
