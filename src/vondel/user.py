@@ -1,78 +1,70 @@
-import re
+import logging
 import requests
-import urllib3
-from vondel.utils import VONDELGYM_URL
-from vondel.parse_page import get_classes_from_vondelgym_oost
+
 
 class User:
-  session_id_regex = re.compile(r"_mysportpages_session_id_=([\w\d]+);")
+  gymly_domain = "https://prod-dot-gymly-337710.ew.r.appspot.com"
+  vondelgym_id = "077049ba-b02f-4e2d-a74f-089a4bb82fa7"
 
   @staticmethod
   def read_session_id(text: str):
     """Return the session id from HTML text"""
     return User.session_id_regex.search(text).group(1)
 
-  def __init__(self, session_id: str = None, email: str = None, password: str = None):
+  def __init__(self, jwt: str = None, email: str = None, password: str = None):
     self.email = email
     self.password = password
-    self.session_id = session_id
+    self.jwt = jwt
+    self.logger = logging.getLogger()
 
   def login(self, email, password, force=False):
-    if not self.session_id or force:
+    if not self.jwt or force:
 
-      url = f'{VONDELGYM_URL}/#login'
-      files = {}
-      files['f[email]'] =  email
-      files['f[password]'] = password
-      files['f[remember_me]'] = '0'
-      files['next_step'] = ''
-      files['commit'] = 'Log in'
-      files['f[form_id]'] = '19206'
-
-      body, content_type = urllib3.encode_multipart_formdata(files)
-
-      headers = {}
-      headers['Content-type'] = content_type
-      headers['Origin'] = VONDELGYM_URL
-      headers['Referer'] = VONDELGYM_URL
-
-      response = requests.post(
-        url,
-        headers=headers,
-        data=body
-      )
-
-      self.session_id = User.read_session_id(response.headers["Set-Cookie"])
+      """Login to Gymly and return the JWT token."""
+      gymly_url = f"{self.gymly_domain}/api/v1/user/auth/login"
+      self.logger.info("Logging in...")
+      response = requests.post(gymly_url, json={"email": email, "password": password})
+      if response.status_code != 200:
+        raise Exception(f"Could not login: {response.status_code} {response.text}")
+      jwt = response.json()["jwt"]
+      self.logger.info("Logged in!")
+      self.jwt = jwt
   
     return self
 
-  def book_class(self, session_id: str, registration_id: str):
-    conf_id_crossfit = '1138'
-    resource_type_id= '1495'
-    url = f'{VONDELGYM_URL}/cs_reservations/reserve/{registration_id}?conf_id={conf_id_crossfit}'
-    session_id_cookie = f'_mysportpages_session_id_={session_id}'
-    headers = {}
-    headers['Cookie'] = session_id_cookie
-    headers['Origin'] = VONDELGYM_URL
-    headers['Referer'] = f'https://vondelgym.nl/lesrooster-vondelgym-oost?resource_type_id={resource_type_id}'
-    headers['X-Requested-With'] = 'XMLHttpRequest'
-    headers['Content-type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+  async def book_class(self, jwt: str, registration_id: str, start_time: str):
+    headers = {
+      'authorization': f'Bearer {jwt}',
+      'content-type': 'application/json',
+    }
+
+    json_data = {
+      'date': start_time,
+    }
 
     return requests.post(
-      url,
-      headers=headers
+      f'{self.gymly_domain}/api/v1/courses/{registration_id}/subscribe',
+      headers=headers,
+      json=json_data,
     )
 
-  async def book_class_at(self, start_time: int, day: int, month: int):
-    """Expects to be called with a logged in user."""
-    # Do this when not logged in to prevent personal identifiable DDoS
-    classes = [clazz for clazz in get_classes_from_vondelgym_oost() \
-      if clazz.day == day and clazz.month == month and clazz.start_time == start_time and not clazz.is_full() and not clazz.is_booked]
+  def get_wanted_classes_from_vondelgym_oost(self) -> list[dict[str, str]]:
+    """Returns a list of ids of classes that are in the waiting list of user belonging to jwt"""
+    url = f"{self.gymly_domain}/api/v1/businesses/{self.vondelgym_id}/courses/waitlist"
+    headers = {
+      'content-type': 'application/json',
+      'authorization': f'Bearer {self.jwt}',
+    }
 
-    if len(classes) > 0:
-      clazz =   classes = [clazz for clazz in get_classes_from_vondelgym_oost(self.session_id) \
-                  if clazz.day == day and clazz.month == month and clazz.start_time == start_time and not clazz.is_full()][0]
-      self.book_class(self.session_id, clazz.registration_id)
-      print(f"Booked class: {clazz}")
-    else:
-      print(f"No spot found in for start time: {start_time}:00 at {day}/{month}.")
+    params = {
+      'size': '10',
+      'page': '1',
+    }
+
+    classes = requests.get(
+      url,
+      params=params,
+      headers=headers,
+    ).json()["content"]
+
+    return [{"id": clazz["id"], "date": clazz["startAt"]} for clazz in classes]

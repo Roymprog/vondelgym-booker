@@ -6,6 +6,8 @@ import os
 from vondel import run
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
+  logging.basicConfig(level=logging.INFO)
+
   logging.info('Python HTTP trigger function processed a request.')
 
   email = os.environ["VONDELGYM_EMAIL"]

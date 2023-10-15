@@ -1,5 +1,3 @@
-**Deprecated:** This code is irrelevant since Vondelgym moved to a new booking system.
-
 This tool can be used to automatically attempt to book classes at Vondelgym that you subscribed to to receive notifications when a spot comes available.
 The tool will read your notifications from the profile page, then read the schedule to find a matching class and book it when there's a spot available.
 
@@ -82,12 +80,12 @@ az group create --name vondelgymbooking-rg --location "West Europe"
 
 Create storage account
 ```bash
-az storage account create --name vondelgymstorage --sku Standard_LRS
+az storage account create --name vondelgymstorage --sku Standard_LRS -g vondelgymbooking-rg
 ```
 
 Create function app
 ```bash
-az functionapp create --consumption-plan-location westeurope --runtime python --runtime-version 3.8 --functions-version 4 --name vondelgym-booker --os-type linux --storage-account vondelgymstorage
+az functionapp create --consumption-plan-location westeurope --runtime python --runtime-version 3.8 --functions-version 4 --name vondelgym-booker --os-type linux --storage-account vondelgymstorage -g vondelgymbooking-rg 
 ```
 
 Install local package and Azure function app requirements locally
@@ -97,10 +95,10 @@ pip install --target .python_packages/lib/site-packages -r requirements.txt  .
 
 Publish this project as a function to the app
 ```bash
-func azure functionapp publish vondelgym-booker --no-build
+func azure functionapp publish vondelgym-booker --no-build --python
 ```
 
 ## Update deployment
 ```bash
-az functionapp update --name vondelgym-booker  --resource-group vondelgymbooking-rg
+az functionapp update --name vondelgym-booker  --resource-group vondelgymbooking-rg 
 ```
