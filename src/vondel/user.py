@@ -48,7 +48,7 @@ class User:
       json=json_data,
     )
 
-  def get_wanted_classes_from_vondelgym_oost(self) -> list[dict[str, str]]:
+  def get_wanted_classes_from_vondelgym_oost(self):
     """Returns a list of ids of classes that are in the waiting list of user belonging to jwt"""
     url = f"{self.gymly_domain}/api/v1/businesses/{self.vondelgym_id}/courses/waitlist"
     headers = {
